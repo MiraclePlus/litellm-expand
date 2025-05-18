@@ -136,7 +136,7 @@ class IdentityEval(IdentityEvalBase, table=True):
     
     # 添加唯一约束: ai_model_id + dataset_name + date 组合必须唯一
     __table_args__ = (
-        UniqueConstraint('ai_model_id', 'dataset_name', 'date', name='uix_model_dataset_date'),
+        UniqueConstraint('ai_model_id', 'dataset_key', 'date', name='uix_model_dataset_key_date'),
     )
 
 

@@ -1,17 +1,11 @@
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, List, Optional
+from typing import Optional
 
 from app.scheduler.identity_eval_tasks import identity_eval_task
-from app.scheduler.tasks import sample_task
 from apscheduler.executors.pool import ThreadPoolExecutor
-from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
-from apscheduler.triggers.date import DateTrigger
-from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI
 
-from app.core.config import settings
 from app.logger import logger
 
 
