@@ -121,11 +121,11 @@ def _identity_eval_task_impl(
 
                 if existing:
                     # 更新现有记录
-                    existing.score = report.metrics[0].score
-                    existing.metric = report.metrics[0].name
+                    existing.score = new_eval.score
+                    existing.metric = new_eval.metric
                     existing.dataset_key = dataset_key
-                    existing.subset = ",".join(report.metrics[0].categories[0].name)
-                    existing.num = report.metrics[0].num
+                    existing.subset = new_eval.subset
+                    existing.num = new_eval.num
                     session.add(existing)
                     logger.info(f"更新IdentityEval记录: {model_name}/{dataset_key}")
                 else:
@@ -229,9 +229,23 @@ def identity_eval_task():
     # 使用线程池执行多个任务实例
     with ThreadPoolExecutor(max_workers=num_threads) as executor:
         # 提交num_threads个任务
-        futures = [
-            executor.submit(_identity_eval_task_impl) for _ in range(num_threads)
-        ]
+        futures = []
+
+        for model in models:
+            dataset_keys = model["dataset_keys"]
+            # 过滤出models中'dataset_keys'长度大于0的模型
+            if len(dataset_keys) > 0:
+                model_name = model["model_id"]
+                # 过滤出dataset_keys中存在的USED_DATASET中的数据集
+                datasets = {}
+                for dataset_key in dataset_keys:
+                    if dataset_key in USED_DATASET:
+                        datasets[dataset_key] = USED_DATASET[dataset_key]
+                futures.append(executor.submit(_identity_eval_task_impl, model_name, datasets))
+
+        if not futures:
+            logger.info("没有可用的模型或数据集，跳过基准测试")
+            return
 
         # 等待所有任务完成
         for future in futures:

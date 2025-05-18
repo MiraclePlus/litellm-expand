@@ -5,6 +5,7 @@ from app.scheduler.identity_eval_tasks import identity_eval_task
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
+from app.core.config import settings
 
 from app.logger import logger
 
@@ -56,16 +57,19 @@ class SchedulerManager:
             logger.info("调度器已关闭")
 
     def _register_jobs(self) -> None:
-        self._scheduler.add_job(
-            identity_eval_task,
-            trigger="interval",
-            id="identity_eval_task",
-            replace_existing=True,
-            max_instances=1,  # 最大实例数
-            seconds=10,
-            next_run_time=datetime.now() + timedelta(seconds=10),
-        )
-        logger.info(f"注册定时任务: identity_eval_task")
+
+        if settings.ENVIRONMENT != "local":  # 仅在非开发环境下注册任务
+            self._scheduler.add_job(
+                identity_eval_task,
+                "cron",
+                id="identity_eval_task",
+                replace_existing=True,
+                max_instances=1,  # 最大实例数
+                hour=0,
+                minute=0,  # 每天 0 点执行
+                next_run_time=datetime.now() + timedelta(seconds=10),
+            )
+            logger.info(f"注册定时任务: identity_eval_task")
 
         # 每5分钟执行一次示例任务
 
