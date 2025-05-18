@@ -1,8 +1,7 @@
 import asyncio
 from datetime import datetime
 
-from loguru import logger
-
+from app.logger import logger
 from app.scheduler.manager import scheduler_manager
 
 
