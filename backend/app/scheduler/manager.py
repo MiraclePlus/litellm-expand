@@ -26,9 +26,9 @@ class SchedulerManager:
             app: FastAPI应用实例
         """
         # 配置作业存储
-        jobstores = {
-            "default": SQLAlchemyJobStore(url=str(settings.SQLALCHEMY_DATABASE_URI))
-        }
+        # jobstores = {
+        #     "default": SQLAlchemyJobStore(url=str(settings.SQLALCHEMY_DATABASE_URI))
+        # }
         
         # 配置执行器
         executors = {
@@ -37,7 +37,7 @@ class SchedulerManager:
         
         # 创建调度器
         self._scheduler = AsyncIOScheduler(
-            jobstores=jobstores,
+            # jobstores=jobstores,
             executors=executors,
             timezone="Asia/Shanghai"
         )

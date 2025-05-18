@@ -3,6 +3,7 @@ from datetime import datetime
 
 from app.logger import logger
 from app.scheduler.manager import scheduler_manager
+from app.scheduler.identity_eval_tasks import identity_eval_task
 
 
 async def sample_task() -> None:
@@ -30,18 +31,27 @@ def register_tasks() -> None:
     注册所有定时任务
     """
     # 每5分钟执行一次示例任务
-    scheduler_manager.add_job(
-        func=sample_task,
-        job_id="sample_task",
-        trigger="interval",
-        minutes=5,
-    )
+    # scheduler_manager.add_job(
+    #     func=sample_task,
+    #     job_id="sample_task",
+    #     trigger="interval",
+    #     minutes=5,
+    # )
     
     # 每天凌晨3点执行数据库清理任务
+    # scheduler_manager.add_job(
+    #     func=db_cleanup_task,
+    #     job_id="db_cleanup_task",
+    #     trigger="cron",
+    #     hour=3,
+    #     minute=0,
+    # )
+    
+    # 每小时执行一次Identity评估数据生成任务
     scheduler_manager.add_job(
-        func=db_cleanup_task,
-        job_id="db_cleanup_task",
-        trigger="cron",
-        hour=3,
-        minute=0,
+        func=identity_eval_task,
+        job_id="identity_eval_task",
+        trigger="interval",
+        # hours=1,
+        minutes=1,
     ) 
