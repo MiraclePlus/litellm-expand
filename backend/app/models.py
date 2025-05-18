@@ -1,4 +1,5 @@
 import uuid
+from sqlalchemy import UniqueConstraint
 
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
@@ -132,6 +133,11 @@ class IdentityEval(IdentityEvalBase, table=True):
     id: int = Field(default=None, primary_key=True)
     created_at: str = Field(default_factory=lambda: "CURRENT_TIMESTAMP")
     updated_at: str
+    
+    # 添加唯一约束: ai_model_id + dataset_name + date 组合必须唯一
+    __table_args__ = (
+        UniqueConstraint('ai_model_id', 'dataset_name', 'date', name='uix_model_dataset_date'),
+    )
 
 
 # Properties to return via API

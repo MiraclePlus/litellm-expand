@@ -1,18 +1,17 @@
-"""add_identity_eval_table
+"""add identity_eval
 
-Revision ID: 1c7e028911eb
+Revision ID: 02346f7fc9b4
 Revises: 1a31ce608336
-Create Date: 2025-05-18 16:24:29.163007
+Create Date: 2025-05-18 20:58:22.196406
 
 """
 from alembic import op
 import sqlalchemy as sa
 import sqlmodel.sql.sqltypes
-from sqlalchemy.schema import Sequence
-
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '1c7e028911eb'
+revision = '02346f7fc9b4'
 down_revision = '1a31ce608336'
 branch_labels = None
 depends_on = None
@@ -29,10 +28,11 @@ def upgrade():
     sa.Column('dataset_key', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('subset', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('num', sa.Integer(), nullable=False),
-    sa.Column('id', sa.Integer(), sa.Sequence('identity_eval_id_seq'), primary_key=True),
-    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('updated_at', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('ai_model_id', 'dataset_name', 'date', name='uix_model_dataset_date')
     )
     # ### end Alembic commands ###
 
