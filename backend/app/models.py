@@ -111,3 +111,34 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=40)
+
+
+# Shared properties for Identity Eval
+class IdentityEvalBase(SQLModel):
+    ai_model_id: str = Field(max_length=255)
+    dataset_name: str = Field(max_length=255)
+    metric: str = Field(max_length=255)
+    score: float
+    date: str  # 使用字符串来接收日期，后续可以转换
+    dataset_key: str = Field(max_length=255)
+    subset: str = Field(max_length=255)
+    num: int
+
+
+# Database model for Identity Eval
+class IdentityEval(IdentityEvalBase, table=True):
+    __tablename__ = "identity_eval"
+    
+    id: int = Field(default=None, primary_key=True)
+    created_at: str = Field(default_factory=lambda: "CURRENT_TIMESTAMP")
+    updated_at: str
+
+
+# Properties to return via API
+class IdentityEvalPublic(IdentityEvalBase):
+    id: int
+
+
+class IdentityEvalsPublic(SQLModel):
+    data: list[IdentityEvalPublic]
+    count: int
