@@ -10,7 +10,7 @@ from fastapi import FastAPI
 
 
 from app.core.config import settings
-from app.logger import logger
+
 
 class SchedulerManager:
     """定时任务管理器"""

@@ -35,6 +35,34 @@ export type ItemUpdate = {
   description?: string | null
 }
 
+/**
+ * 任务信息模型
+ */
+export type JobInfo = {
+  /**
+   * 任务ID
+   */
+  id: string
+  /**
+   * 任务名称
+   */
+  name: string
+  /**
+   * 下次执行时间
+   */
+  next_run_time?: string | null
+  /**
+   * 触发器类型
+   */
+  trigger: string
+  /**
+   * 触发器参数
+   */
+  trigger_args: {
+    [key: string]: unknown
+  }
+}
+
 export type Message = {
   message: string
 }
@@ -170,6 +198,20 @@ export type PrivateCreateUserData = {
 }
 
 export type PrivateCreateUserResponse = UserPublic
+
+export type SchedulerGetAllJobsResponse = Array<JobInfo>
+
+export type SchedulerPauseJobData = {
+  jobId: string
+}
+
+export type SchedulerPauseJobResponse = void
+
+export type SchedulerResumeJobData = {
+  jobId: string
+}
+
+export type SchedulerResumeJobResponse = void
 
 export type UsersReadUsersData = {
   limit?: number

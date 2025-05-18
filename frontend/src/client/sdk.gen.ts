@@ -25,6 +25,11 @@ import type {
   LoginRecoverPasswordHtmlContentResponse,
   PrivateCreateUserData,
   PrivateCreateUserResponse,
+  SchedulerGetAllJobsResponse,
+  SchedulerPauseJobData,
+  SchedulerPauseJobResponse,
+  SchedulerResumeJobData,
+  SchedulerResumeJobResponse,
   UsersReadUsersData,
   UsersReadUsersResponse,
   UsersCreateUserData,
@@ -291,6 +296,67 @@ export class PrivateService {
       url: "/api/v1/private/users/",
       body: data.requestBody,
       mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
+export class SchedulerService {
+  /**
+   * 获取所有定时任务
+   * 获取系统中所有注册的定时任务信息
+   * @returns JobInfo Successful Response
+   * @throws ApiError
+   */
+  public static getAllJobs(): CancelablePromise<SchedulerGetAllJobsResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/scheduler/jobs",
+    })
+  }
+
+  /**
+   * 暂停定时任务
+   * 根据任务ID暂停指定的定时任务
+   * @param data The data for the request.
+   * @param data.jobId
+   * @returns void Successful Response
+   * @throws ApiError
+   */
+  public static pauseJob(
+    data: SchedulerPauseJobData,
+  ): CancelablePromise<SchedulerPauseJobResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/scheduler/jobs/{job_id}/pause",
+      path: {
+        job_id: data.jobId,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * 恢复定时任务
+   * 根据任务ID恢复指定的定时任务
+   * @param data The data for the request.
+   * @param data.jobId
+   * @returns void Successful Response
+   * @throws ApiError
+   */
+  public static resumeJob(
+    data: SchedulerResumeJobData,
+  ): CancelablePromise<SchedulerResumeJobResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/scheduler/jobs/{job_id}/resume",
+      path: {
+        job_id: data.jobId,
+      },
       errors: {
         422: "Validation Error",
       },
