@@ -7,8 +7,6 @@ from contextlib import asynccontextmanager
 from app.api.main import api_router
 from app.core.config import settings
 from app.scheduler.manager import scheduler_manager
-from app.scheduler.tasks import register_tasks
-
 
 def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
@@ -17,8 +15,6 @@ def custom_generate_unique_id(route: APIRoute) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
-    # 启动时执行
-    register_tasks()
     scheduler_manager.init_scheduler(app)
     
     yield
