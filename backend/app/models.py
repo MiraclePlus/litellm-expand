@@ -3,7 +3,7 @@ from sqlalchemy import UniqueConstraint
 
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
-from datetime import date
+from datetime import date, datetime
 
 # Shared properties
 class UserBase(SQLModel):
@@ -131,8 +131,8 @@ class IdentityEval(IdentityEvalBase, table=True):
     __tablename__ = "identity_eval"
     
     id: int = Field(default=None, primary_key=True)
-    created_at: str = Field(default_factory=lambda: "CURRENT_TIMESTAMP")
-    updated_at: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now())
+    updated_at: datetime = Field(default_factory=lambda: datetime.now())
     
     # 添加唯一约束: ai_model_id + dataset_name + date 组合必须唯一
     __table_args__ = (

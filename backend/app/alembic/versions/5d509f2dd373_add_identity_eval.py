@@ -1,8 +1,8 @@
 """add identity_eval
 
-Revision ID: 4a70e34eecbe
+Revision ID: 5d509f2dd373
 Revises: 1a31ce608336
-Create Date: 2025-05-18 21:14:02.390450
+Create Date: 2025-05-18 23:18:15.857198
 
 """
 from alembic import op
@@ -11,7 +11,7 @@ import sqlmodel.sql.sqltypes
 
 
 # revision identifiers, used by Alembic.
-revision = '4a70e34eecbe'
+revision = '5d509f2dd373'
 down_revision = '1a31ce608336'
 branch_labels = None
 depends_on = None
@@ -29,10 +29,10 @@ def upgrade():
     sa.Column('subset', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('num', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('created_at', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('updated_at', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('ai_model_id', 'dataset_name', 'date', name='uix_model_dataset_date')
+    sa.UniqueConstraint('ai_model_id', 'dataset_key', 'date', name='uix_model_dataset_key_date')
     )
     # ### end Alembic commands ###
 
