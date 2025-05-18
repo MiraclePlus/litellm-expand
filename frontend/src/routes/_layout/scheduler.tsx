@@ -1,11 +1,4 @@
-import { 
-  Box,
-  Button,
-  Flex, 
-  Heading, 
-  Spinner, 
-  Text
-} from "@chakra-ui/react"
+import { Box, Button, Flex, Heading, Spinner, Text } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { FiPause, FiPlay } from "react-icons/fi"
@@ -188,4 +181,4 @@ function SchedulerPage() {
       )}
     </Flex>
   )
-} 
+}
