@@ -1,17 +1,17 @@
 """add identity_eval
 
-Revision ID: 02346f7fc9b4
+Revision ID: 4a70e34eecbe
 Revises: 1a31ce608336
-Create Date: 2025-05-18 20:58:22.196406
+Create Date: 2025-05-18 21:14:02.390450
 
 """
 from alembic import op
 import sqlalchemy as sa
 import sqlmodel.sql.sqltypes
-from sqlalchemy.dialects import postgresql
+
 
 # revision identifiers, used by Alembic.
-revision = '02346f7fc9b4'
+revision = '4a70e34eecbe'
 down_revision = '1a31ce608336'
 branch_labels = None
 depends_on = None

@@ -3,7 +3,7 @@ from sqlalchemy import UniqueConstraint
 
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
-
+from datetime import date
 
 # Shared properties
 class UserBase(SQLModel):
@@ -120,7 +120,7 @@ class IdentityEvalBase(SQLModel):
     dataset_name: str = Field(max_length=255)
     metric: str = Field(max_length=255)
     score: float
-    date: str  # 使用字符串来接收日期，后续可以转换
+    date: date
     dataset_key: str = Field(max_length=255)
     subset: str = Field(max_length=255)
     num: int
