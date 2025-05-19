@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from app.scheduler.intellectual_fluctuation_task import intellectual_fluctuation_task
 from app.scheduler.identity_eval_task import identity_eval_task
+from app.scheduler.llm_connectivity_task import llm_connectivity_task
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
@@ -72,6 +72,16 @@ class SchedulerManager:
             )
             logger.info(f"注册定时任务: identity_eval_task")
 
+            # 注册LLM连通性检测任务
+            self._scheduler.add_job(
+                llm_connectivity_task,
+                "interval",
+                id="llm_connectivity_task",
+                replace_existing=True,
+                hours=1,  # 每小时执行一次
+                next_run_time=datetime.now() + timedelta(seconds=10),
+            )
+            logger.info(f"注册定时任务: llm_connectivity_task")
 
         # 评测分数基准值差异
         # self._scheduler.add_job(

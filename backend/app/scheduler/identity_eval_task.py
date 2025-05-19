@@ -61,6 +61,9 @@ USED_DATASET = {
 CACHE_PATH = "evalscope/"
 TEMPERATURE = 0.0
 
+API_URL = "https://llm-proxy.miracleplus.com/v1" if settings.ENVIRONMENT == "local" else "http://host.docker.internal:8000/v1"
+API_KEY = "sk-ZY_wnuzes5znMQV31EXRlw"
+    
 
 def _identity_eval_task_impl(
     model_name: str,
@@ -77,8 +80,8 @@ def _identity_eval_task_impl(
                 datasets=[dataset.dataset_name],
                 dataset_args=dataset.dataset_args,
                 eval_type=EvalType.SERVICE,
-                api_url="https://llm-proxy.miracleplus.com//v1",
-                api_key="sk-ZY_wnuzes5znMQV31EXRlw",
+                api_url=API_URL,
+                api_key=API_KEY,
                 timeout=3600,
                 eval_batch_size=dataset.eval_concurrency,
                 limit=dataset.dataset_limit,
