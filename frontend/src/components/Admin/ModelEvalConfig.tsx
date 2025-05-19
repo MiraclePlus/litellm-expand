@@ -24,8 +24,6 @@ const DATASET_KEYS = [
 interface ModelConfig {
   ai_model_id: string;
   dataset_keys: string[];
-  created_at: string;
-  updated_at: string;
 }
 
 export const ModelEvalConfig = () => {
@@ -41,9 +39,7 @@ export const ModelEvalConfig = () => {
       const modelData = await IdentityEvalModelService.getAllModels();
       setModels(modelData.map(m => ({
         ai_model_id: m.ai_model_id || '',
-        dataset_keys: m.dataset_keys || [],
-        created_at: m.created_at || '',
-        updated_at: m.updated_at || ''
+        dataset_keys: m.dataset_keys || []
       })));
     } catch (error) {
       console.error('Failed to load models:', error);
@@ -88,8 +84,6 @@ export const ModelEvalConfig = () => {
     } catch (error) {
       console.error('Failed to update model:', error);
       showErrorToast(`更新模型 ${modelId} 配置时出错`);
-      // 恢复原来的状态
-      loadModels();
     } finally {
       setSaving(prev => ({ ...prev, [modelId]: false }));
     }
