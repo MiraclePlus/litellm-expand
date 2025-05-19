@@ -2,71 +2,27 @@
 from json import dumps
 from app.core.config import settings
 from app.logger import logger
+from app.models import IdentityEvalModel
 import requests
+from sqlalchemy import func
+from sqlmodel import Session, select
+from app.core.db import engine
 
 API_URL = "https://llm-proxy.miracleplus.com/v1" if settings.ENVIRONMENT == "local" else "http://host.docker.internal:8000/v1"
 API_KEY = "sk-GC6dxzp_Ci4sECy8kJDtQQ"
 
 def llm_connectivity_task():
     # 准备数据
-    models = [
-        {"model_id": "gpt-4.1-azure", "dataset_keys": ["AIME25"]},
-        {"model_id": "gpt-4.1-mini", "dataset_keys": ["AIME25"]},
-        {
-            "model_id": "pinefield.us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-        {
-            "model_id": "grok-3-mini-beta-jiang",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-        {
-            "model_id": "pinefield.us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-        {
-            "model_id": "o4-mini-jiang",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-    ]
+    models = []
+
+    # 创建数据库会话
+    with Session(engine) as session:
+        models = session.exec(select(IdentityEvalModel.ai_model_id).where(func.cardinality(IdentityEvalModel.dataset_keys) > 0)).all()
 
     # 失败的模型
     failed_models = []
 
-    for model in models:
-        model_id = model["model_id"]
+    for model_id in models:
         logger.info(f"开始检测模型连通性: {model_id}")
         try:
             response = requests.post(

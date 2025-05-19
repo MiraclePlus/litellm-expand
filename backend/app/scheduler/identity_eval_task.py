@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from json import dumps
-import random
 from datetime import date
 from typing import Optional, Dict, Union
 from concurrent.futures import ThreadPoolExecutor
