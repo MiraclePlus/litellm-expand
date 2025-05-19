@@ -79,7 +79,7 @@ class SchedulerManager:
         #     trigger="interval",
         #     id="intellectual_fluctuation_task",
         #     replace_existing=True,
-        #     minutes=5,
+        #     days=1,
         #     next_run_time=datetime.now() + timedelta(seconds=10),
         # )
         # logger.info(f"注册定时任务: intellectual_fluctuation_task")

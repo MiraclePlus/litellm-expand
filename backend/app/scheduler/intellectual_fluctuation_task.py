@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, date
 from json import dumps
-import app
+from app.core.config import settings
 from app.logger import logger
 from app.models import IdentityEval
 import requests
@@ -110,9 +110,11 @@ def intellectual_fluctuation_task():
                     # 计算当天分数
                     current_score = today_result.score
                     # 计算分数差异
-                    score_diff = abs(mean_score - current_score)
+                    # score_diff = abs(mean_score - current_score)
+                    score_diff = round(current_score - mean_score, 2)
                     # 计算差异百分比
-                    diff_percent = score_diff / mean_score * 100
+                    # diff_percent = score_diff / mean_score * 100
+                    diff_percent = score_diff * 100
                     diff[f"{model_id}/{dataset_key}"] = int(diff_percent)
                 except Exception as e:
                     logger.error(
@@ -123,11 +125,14 @@ def intellectual_fluctuation_task():
     messages = []
     for key, diff_percent in diff.items():
         if diff_percent is None:
-            messages.append(f"🟠{key}: 基准值差异计算跳过，数据不足")
-        elif diff_percent < 5:
-            messages.append(f"🟢{key}: {diff_percent}%")
-        else:
-            messages.append(f"🔴{key}: {diff_percent}%")
+            messages.append(f"⚫️ {key}: 基准值差异计算跳过，数据不足")
+        elif diff_percent >= 0 and diff_percent <= 5:  # 上升/不变绿色
+            messages.append(f"🟢 {key}: {diff_percent}%")
+        elif diff_percent <= 0 and diff_percent > -5:  # 下降黄色
+            messages.append(f"🟡 {key}: {diff_percent}%")
+        else:  # 超5%红色
+            messages.append(f"🔴 {key}: {diff_percent}%")
+            
     _send_message_to_feishu("\r\n".join(messages))
 
 def _send_message_to_feishu(message):
@@ -143,8 +148,12 @@ def _send_message_to_feishu(message):
         },
     }
     try:
-        url = "https://open.feishu.cn/open-apis/bot/v2/hook/52d1469f-1fed-40ee-aa7b-39df5159c945" if app.settings.ENVIRONMENT != "local" else "https://open.feishu.cn/open-apis/bot/v2/hook/3fb5fbbe-37c0-4788-b6d4-5333f5c0a4d6"
-        response = requests.post(url, headers=headers, data=dumps(data))
+        webhook_url = (
+            "https://open.feishu.cn/open-apis/bot/v2/hook/52d1469f-1fed-40ee-aa7b-39df5159c945"
+            if settings.ENVIRONMENT != "local"
+            else "https://open.feishu.cn/open-apis/bot/v2/hook/3fb5fbbe-37c0-4788-b6d4-5333f5c0a4d6"
+        )
+        response = requests.post(webhook_url, headers=headers, data=dumps(data))
         response.raise_for_status()
     except requests.RequestException as e:
-        print(f"Error sending message to Feishu: {e}")
+        logger.error(f"发送飞书消息失败: {e}")

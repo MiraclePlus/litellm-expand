@@ -5,7 +5,7 @@ from datetime import date
 from typing import Optional, Dict, Union
 from concurrent.futures import ThreadPoolExecutor
 
-import app
+from app.core.config import settings
 from app.scheduler.intellectual_fluctuation_task import intellectual_fluctuation_task
 from requests import RequestException
 import requests
@@ -160,13 +160,13 @@ def _send_message_to_feishu(param):
     try:
         webhook_url = (
             "https://open.feishu.cn/open-apis/bot/v2/hook/52d1469f-1fed-40ee-aa7b-39df5159c945"
-            if app.settings.ENVIRONMENT != "local"
+            if settings.ENVIRONMENT != "local"
             else "https://open.feishu.cn/open-apis/bot/v2/hook/3fb5fbbe-37c0-4788-b6d4-5333f5c0a4d6"
         )
         response = requests.post(webhook_url, headers=headers, data=dumps(data))
         response.raise_for_status()
     except RequestException as e:
-        print(f"Error sending message to Feishu: {e}")
+        logger.error(f"发送飞书消息失败: {e}")
 
 
 def identity_eval_task():
