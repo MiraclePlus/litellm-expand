@@ -8,10 +8,11 @@ from app.core.config import settings
 from app.scheduler.intellectual_fluctuation_task import intellectual_fluctuation_task
 from requests import RequestException
 import requests
+from sqlalchemy import func
 from sqlmodel import Session, select
 from app.core.db import engine
 from app.logger import logger
-from app.models import IdentityEval
+from app.models import IdentityEval, IdentityEvalModel
 from evalscope import TaskConfig, run_task
 from evalscope.constants import EvalType
 
@@ -179,61 +180,13 @@ def identity_eval_task():
     num_threads = 5
 
     # 准备数据
-    models = [
-        {"model_id": "gpt-4.1-azure", "dataset_keys": ["AIME25"]},
-        {"model_id": "gpt-4.1-mini", "dataset_keys": ["AIME25"]},
-        {
-            "model_id": "pinefield.us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-        {
-            "model_id": "grok-3-mini-beta-jiang",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-        {
-            "model_id": "pinefield.us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-        {
-            "model_id": "o4-mini-jiang",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-    ]
+    models = []
+    # 创建数据库会话
+    with Session(engine) as session:
+        models = session.exec(select(IdentityEvalModel.ai_model_id, IdentityEvalModel.dataset_keys).where(func.cardinality(IdentityEvalModel.dataset_keys) > 0)).all()
 
     logger.info(
-        f"启动Identity评估数据生成任务，线程数：{num_threads}, 模型数：{len(models)}"
+        f"启动Identity评估数据生成任务，线程数：{num_threads}, 模型：{','.join(map(lambda x: x.ai_model_id, models))}"
     )
 
     # 使用线程池执行多个任务实例
@@ -242,10 +195,10 @@ def identity_eval_task():
         futures = []
 
         for model in models:
-            dataset_keys = model["dataset_keys"]
+            dataset_keys = model.dataset_keys
             # 过滤出models中'dataset_keys'长度大于0的模型
             if len(dataset_keys) > 0:
-                model_name = model["model_id"]
+                model_name = model.ai_model_id
                 # 过滤出dataset_keys中存在的USED_DATASET中的数据集
                 datasets = {}
                 for dataset_key in dataset_keys:
@@ -269,4 +222,4 @@ def identity_eval_task():
     logger.info(f"所有Identity评估数据生成任务已完成")
 
     # 立即执行 intellectual_fluctuation_task
-    intellectual_fluctuation_task()
+    intellectual_fluctuation_task(models)

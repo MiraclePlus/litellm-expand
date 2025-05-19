@@ -2,68 +2,21 @@ from datetime import datetime, timedelta, date
 from json import dumps
 from app.core.config import settings
 from app.logger import logger
-from app.models import IdentityEval
+from app.models import IdentityEval, IdentityEvalModel
 import requests
+from sqlalchemy import func
 from sqlmodel import Session, select
 from app.core.db import engine
 
 
-def intellectual_fluctuation_task():
+def intellectual_fluctuation_task(models: list[IdentityEvalModel] | None = None):
     # 准备数据
-    models = [
-        {"model_id": "gpt-4.1-azure", "dataset_keys": ["AIME25"]},
-        {"model_id": "gpt-4.1-mini", "dataset_keys": ["AIME25"]},
-        {
-            "model_id": "pinefield.us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-        {
-            "model_id": "grok-3-mini-beta-jiang",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-        {
-            "model_id": "pinefield.us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-        {
-            "model_id": "o4-mini-jiang",
-            "dataset_keys": [
-                "AIME24",
-                "AIME25",
-                "GPQA_DIAMOND",
-                "MMLU_PRO_LAW",
-                "MMLU_PRO_BUSINESS",
-                "MMLU_PRO_PHILOSOPHY",
-                "LIVE_CODE_BENCH",
-            ],
-        },
-    ]
+    if models is None:
+        # 创建数据库会话
+        with Session(engine) as session:
+            models = session.exec(select(IdentityEvalModel.ai_model_id, IdentityEvalModel.dataset_keys).where(func.cardinality(IdentityEvalModel.dataset_keys) > 0)).all()
 
-    logger.info(f"启动智力波动任务，模型数：{len(models)}")
+    logger.info(f"启动智力波动任务，模型：{','.join(map(lambda x: x.ai_model_id, models))}")
 
     # 记录差异的模型数据集分数，等所有计算完成后统计一发送飞书消息
     diff: dict[str, int | None] = {}
@@ -71,8 +24,8 @@ def intellectual_fluctuation_task():
     with Session(engine) as session:
         # 获取模型评测分数
         for model in models:
-            model_id = model["model_id"]
-            dataset_keys = model["dataset_keys"]
+            model_id = model.ai_model_id
+            dataset_keys = model.dataset_keys
             for dataset_key in dataset_keys:
                 try:
                     # 查询模型今天的分数
