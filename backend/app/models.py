@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import UniqueConstraint
+from sqlalchemy import ARRAY, String, UniqueConstraint
 
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
@@ -148,3 +148,17 @@ class IdentityEvalPublic(IdentityEvalBase):
 class IdentityEvalsPublic(SQLModel):
     data: list[IdentityEvalPublic]
     count: int
+
+# Database model for Identity Eval Model
+class IdentityEvalModel(SQLModel, table=True):
+    __tablename__ = "identity_eval_model"
+    
+    ai_model_id: str = Field(default=None, primary_key=True)
+    dataset_keys: list[str] = Field(sa_type=ARRAY(String))
+    created_at: datetime = Field(default_factory=lambda: datetime.now())
+    updated_at: datetime = Field(default_factory=lambda: datetime.now())
+    
+    # 添加唯一约束: model_id
+    __table_args__ = (
+        UniqueConstraint('ai_model_id', name='uix_ai_model_id'),
+    )
