@@ -1,7 +1,5 @@
 import logging
 import sys
-from typing import Dict, Any
-import click
 
 # ANSI颜色代码
 class ColorCode:
@@ -66,7 +64,7 @@ root_logger.addHandler(console_handler)
 
 # 创建应用日志记录器
 logger = logging.getLogger("litellm")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # 统一配置其他常用模块的日志格式
 module_loggers = [

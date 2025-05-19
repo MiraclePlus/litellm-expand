@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from app.scheduler.identity_eval_tasks import identity_eval_task
+from app.scheduler.intellectual_fluctuation_task import intellectual_fluctuation_task
+from app.scheduler.identity_eval_task import identity_eval_task
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
@@ -70,6 +71,18 @@ class SchedulerManager:
                 next_run_time=datetime.now() + timedelta(seconds=10),
             )
             logger.info(f"注册定时任务: identity_eval_task")
+
+
+        # 评测分数基准值差异
+        # self._scheduler.add_job(
+        #     intellectual_fluctuation_task,
+        #     trigger="interval",
+        #     id="intellectual_fluctuation_task",
+        #     replace_existing=True,
+        #     minutes=5,
+        #     next_run_time=datetime.now() + timedelta(seconds=10),
+        # )
+        # logger.info(f"注册定时任务: intellectual_fluctuation_task")
 
         # 每5分钟执行一次示例任务
 

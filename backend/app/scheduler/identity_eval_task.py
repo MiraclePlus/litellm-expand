@@ -5,6 +5,8 @@ from datetime import date
 from typing import Optional, Dict, Union
 from concurrent.futures import ThreadPoolExecutor
 
+import app
+from app.scheduler.intellectual_fluctuation_task import intellectual_fluctuation_task
 from requests import RequestException
 import requests
 from sqlmodel import Session, select
@@ -86,8 +88,9 @@ def _identity_eval_task_impl(
                 use_cache=f"evalscope/{date.today()}",
             )
 
-            report = run_task(task_config)
-            report = report[dataset.dataset_name]
+            # report = run_task(task_config)
+            # report = report[dataset.dataset_name]
+            report = None
 
             # 创建数据库会话
             with Session(engine) as session:
@@ -138,11 +141,11 @@ def _identity_eval_task_impl(
         except Exception as e:
             logger.error(f"{model_name}/{dataset_key} 基准测试任务异常: {str(e)}")
             _send_message_to_feishu(
-                f"Error running task for [{model_name}] on [{dataset_key}]: {e}",
-                webhook_url="https://open.feishu.cn/open-apis/bot/v2/hook/52d1469f-1fed-40ee-aa7b-39df5159c945",
+                f"Error running task for [{model_name}] on [{dataset_key}]: {e}"
             )
 
-def _send_message_to_feishu(param, webhook_url):
+
+def _send_message_to_feishu(param):
     # Send a message to Feishu
     headers = {
         "Content-Type": "application/json",
@@ -155,6 +158,11 @@ def _send_message_to_feishu(param, webhook_url):
         },
     }
     try:
+        webhook_url = (
+            "https://open.feishu.cn/open-apis/bot/v2/hook/52d1469f-1fed-40ee-aa7b-39df5159c945"
+            if app.settings.ENVIRONMENT != "local"
+            else "https://open.feishu.cn/open-apis/bot/v2/hook/3fb5fbbe-37c0-4788-b6d4-5333f5c0a4d6"
+        )
         response = requests.post(webhook_url, headers=headers, data=dumps(data))
         response.raise_for_status()
     except RequestException as e:
@@ -241,7 +249,9 @@ def identity_eval_task():
                 for dataset_key in dataset_keys:
                     if dataset_key in USED_DATASET:
                         datasets[dataset_key] = USED_DATASET[dataset_key]
-                futures.append(executor.submit(_identity_eval_task_impl, model_name, datasets))
+                futures.append(
+                    executor.submit(_identity_eval_task_impl, model_name, datasets)
+                )
 
         if not futures:
             logger.info("没有可用的模型或数据集，跳过基准测试")
@@ -255,3 +265,6 @@ def identity_eval_task():
                 logger.error(f"Identity评估任务线程异常: {str(e)}")
 
     logger.info(f"所有Identity评估数据生成任务已完成")
+
+    # 立即执行 intellectual_fluctuation_task
+    intellectual_fluctuation_task()
