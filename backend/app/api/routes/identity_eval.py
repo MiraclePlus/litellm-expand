@@ -1,11 +1,11 @@
-from datetime import date, datetime, timedelta
+from datetime import date
 from typing import List, Optional, Dict, Any
 
-from fastapi import APIRouter, Depends, Query
-from sqlmodel import Session, select
+from fastapi import APIRouter, Query
+from sqlmodel import select
 
 from app.api.deps import SessionDep
-from app.models import IdentityEval, IdentityEvalPublic, IdentityEvalsPublic
+from app.models import IdentityEval, IdentityEvalsPublic
 
 router = APIRouter(tags=["identity_eval"], prefix="/identity-eval")
 
