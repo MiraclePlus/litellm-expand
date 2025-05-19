@@ -68,7 +68,7 @@ class SchedulerManager:
                 max_instances=1,  # 最大实例数
                 hour=0,
                 minute=0,  # 每天 0 点执行
-                next_run_time=datetime.now() + timedelta(seconds=10),
+                # next_run_time=datetime.now() + timedelta(seconds=10),
             )
             logger.info(f"注册定时任务: identity_eval_task")
 
