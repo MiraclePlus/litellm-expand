@@ -56,11 +56,10 @@ def get_all_models(
     response = requests.get(f"{API_URL}/models", headers=headers)
     llm_models = response.json()['data']
 
-    # 将models中的模型添加到数据库中
-    # for model in models:
-    #     session.add(IdentityEvalModel(ai_model_id=model['id'], dataset_keys=model['dataset_keys']))
-    # session.commit()
-    # session.refresh(models)
+    # 合并models和llm_models
+    for model in llm_models:
+        if model['id'] not in [m.ai_model_id for m in models]:
+            models.append(IdentityEvalModel(ai_model_id=model['id'], dataset_keys=[]))
 
     return models
 
@@ -165,15 +164,13 @@ def update_dataset_keys(
         select(IdentityEvalModel).where(IdentityEvalModel.ai_model_id == ai_model_id)
     ).first()
     if not db_model:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"模型 {ai_model_id} 不存在"
-        )
+        # 模型不存在，则创建一个新模型
+        db_model = IdentityEvalModel(ai_model_id=ai_model_id, dataset_keys=dataset_keys)
+        session.add(db_model)
+    else:
+        # 更新数据集键
+        db_model.dataset_keys = dataset_keys
     
-    # 更新数据集键
-    db_model.dataset_keys = dataset_keys
-    
-    session.add(db_model)
     session.commit()
     session.refresh(db_model)
     

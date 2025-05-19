@@ -7,6 +7,7 @@ import {
   FiHome,
   FiSettings,
   FiUsers,
+  FiBarChart2,
 } from "react-icons/fi"
 import type { IconType } from "react-icons/lib"
 
@@ -21,6 +22,7 @@ const items = [
 const adminItems = [
   { icon: FiUsers, title: "Admin", path: "/admin" },
   { icon: FiClock, title: "定时任务", path: "/scheduler" },
+  { icon: FiBarChart2, title: "评测模型配置", path: "/model-eval-config" },
 ]
 
 interface SidebarItemsProps {
