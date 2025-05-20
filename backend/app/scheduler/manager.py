@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from app.scheduler.identity_eval_task import identity_eval_task
 from app.scheduler.llm_connectivity_task import llm_connectivity_task
@@ -66,9 +67,8 @@ class SchedulerManager:
                 id="identity_eval_task",
                 replace_existing=True,
                 max_instances=1,  # 最大实例数
-                hour=0,
-                minute=0,  # 每天 0 点执行
-                # next_run_time=datetime.now() + timedelta(seconds=10),
+                hour=0, minute=0,  # 每天 0 点执行
+                # next_run_time=datetime.now(ZoneInfo('Asia/Shanghai')) + timedelta(seconds=10),
             )
             logger.info(f"注册定时任务: identity_eval_task")
 

@@ -85,7 +85,7 @@ def _identity_eval_task_impl(
                 timeout=3600,
                 eval_batch_size=dataset.eval_concurrency,
                 limit=dataset.dataset_limit,
-                generation_config={"temperature": TEMPERATURE, "do_sample": True},
+                generation_config={"temperature": TEMPERATURE},
                 dataset_dir=CACHE_PATH,
                 judge_worker_num=1,  # > 1 could run into deadlock
                 use_cache=f"evalscope/{date.today()}",
