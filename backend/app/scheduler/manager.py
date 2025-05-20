@@ -75,10 +75,10 @@ class SchedulerManager:
             # 注册LLM连通性检测任务
             self._scheduler.add_job(
                 llm_connectivity_task,
-                "interval",
+                "cron",
                 id="llm_connectivity_task",
                 replace_existing=True,
-                hours=1,  # 每小时执行一次
+                hour="*",  # 每小时执行一次
                 # next_run_time=datetime.now() + timedelta(seconds=10),
             )
             logger.info(f"注册定时任务: llm_connectivity_task")
