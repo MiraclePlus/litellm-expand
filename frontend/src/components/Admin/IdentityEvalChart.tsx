@@ -5,34 +5,10 @@
 
 import React, { useState, useEffect } from "react";
 import { Box, Heading, Text, Spinner } from "@chakra-ui/react";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-
+import ReactECharts from "echarts-for-react";
 import { IdentityEvalService } from "@/client/sdk.gen";
 
-// 注册 Chart.js 组件
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
 interface ModelTestResult {
-  id: number;
-  model_id: string;
   dataset_key: string;
   dataset_name: string;
   metric: string;
@@ -40,12 +16,10 @@ interface ModelTestResult {
   subset: string;
   num: number;
   date: string;
-  created_at: string;
-  updated_at: string;
 }
 
-interface IdentityEvalData {
-  [date: string]: ModelTestResult[];
+interface ModelData {
+  [modelId: string]: ModelTestResult[];
 }
 
 interface IdentityEvalChartProps {
@@ -55,7 +29,7 @@ interface IdentityEvalChartProps {
 }
 
 const IdentityEvalChart: React.FC<IdentityEvalChartProps> = () => {
-  const [evalData, setEvalData] = useState<IdentityEvalData>({});
+  const [modelData, setModelData] = useState<ModelData>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDataset, setSelectedDataset] = useState<string>("all");
@@ -65,28 +39,8 @@ const IdentityEvalChart: React.FC<IdentityEvalChartProps> = () => {
     const fetchEvalData = async () => {
       try {
         setLoading(true);
-
         const response = await IdentityEvalService.getChartData({});
-        // 将API返回的数据转换为正确的类型
-        const formattedData: IdentityEvalData = {};
-        Object.entries(response).forEach(([date, results]) => {
-          formattedData[date] = (results as unknown as ModelTestResult[]).map(
-            (result) => ({
-              id: result.id,
-              model_id: result.model_id,
-              dataset_key: result.dataset_key,
-              dataset_name: result.dataset_name,
-              metric: result.metric,
-              score: result.score,
-              subset: result.subset,
-              num: result.num,
-              date: result.date,
-              created_at: result.created_at,
-              updated_at: result.updated_at,
-            })
-          );
-        });
-        setEvalData(formattedData);
+        setModelData(response as unknown as ModelData);
         setLoading(false);
       } catch (err) {
         console.error("获取评估数据错误:", err);
@@ -98,91 +52,119 @@ const IdentityEvalChart: React.FC<IdentityEvalChartProps> = () => {
     fetchEvalData();
   }, []);
 
-  // 处理图表数据
-  const processChartData = (modelId: string) => {
-    const chartData = {
-      labels: [] as string[],
-      datasets: [] as {
-        label: string;
-        data: number[];
-        borderColor: string;
-        backgroundColor: string;
-        tension: number;
-      }[],
+  // 生成随机颜色
+  const getRandomColor = (() => {
+    const colorCache = new Map<string, string>();
+    return (key: string) => {
+      if (colorCache.has(key)) {
+        return colorCache.get(key)!;
+      }
+      const letters = "0123456789ABCDEF";
+      let color = "#";
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      colorCache.set(key, color);
+      return color;
     };
+  })();
 
-    if (Object.keys(evalData).length === 0) {
-      return chartData;
+  // 处理图表数据
+  const getChartOption = (modelId: string) => {
+    const modelResults = modelData[modelId] || [];
+    if (modelResults.length === 0) {
+      return {};
     }
 
-    // 获取排序后的日期
-    const sortedDates = Object.keys(evalData).sort(
-      (a, b) => new Date(a).getTime() - new Date(b).getTime()
+    // 获取所有日期并排序
+    const dates = Array.from(
+      new Set(modelResults.map((result) => result.date))
+    ).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+
+    // 获取所有数据集
+    const datasetKeys = Array.from(
+      new Set(
+        modelResults
+          .filter(
+            (result) =>
+              selectedDataset === "all" ||
+              result.dataset_key === selectedDataset
+          )
+          .map((result) => result.dataset_key)
+      )
     );
-    chartData.labels = sortedDates.map((date) => {
-      const d = new Date(date);
-      return `${d.getMonth() + 1}/${d.getDate()}`;
-    });
 
-    // 为每个数据集创建系列
-    const datasetMap = new Map<
-      string,
-      {
-        label: string;
-        data: number[];
-        borderColor: string;
-        backgroundColor: string;
-      }
-    >();
-
-    // 生成随机颜色
-    const getRandomColor = (() => {
-      const colorCache = new Map<string, string>();
-      return (key: string) => {
-        if (colorCache.has(key)) {
-          return colorCache.get(key)!;
-        }
-        const letters = "0123456789ABCDEF";
-        let color = "#";
-        for (let i = 0; i < 6; i++) {
-          color += letters[Math.floor(Math.random() * 16)];
-        }
-        colorCache.set(key, color);
-        return color;
-      };
-    })();
-
-    // 遍历数据创建数据集
-    sortedDates.forEach((date, dateIndex) => {
-      const dateResults = evalData[date] || [];
-      dateResults.forEach((result: ModelTestResult) => {
-        if (
-          result.model_id === modelId &&
-          (selectedDataset === "all" || result.dataset_key === selectedDataset)
-        ) {
-          if (!datasetMap.has(result.dataset_key)) {
-            const color = getRandomColor(result.dataset_key);
-            datasetMap.set(result.dataset_key, {
-              label: result.dataset_key,
-              data: Array(sortedDates.length).fill(null),
-              borderColor: color,
-              backgroundColor: color,
-            });
-          }
-          const dataset = datasetMap.get(result.dataset_key);
-          if (dataset) {
-            dataset.data[dateIndex] = result.score;
-          }
-        }
+    const series = datasetKeys.map((datasetKey) => {
+      // 为每个数据集创建数据点
+      const data = dates.map((date) => {
+        const result = modelResults.find(
+          (r) => r.dataset_key === datasetKey && r.date === date
+        );
+        return result ? result.score : null;
       });
+
+      return {
+        name: datasetKey,
+        type: "line",
+        data: data,
+        smooth: true,
+        symbol: "circle",
+        symbolSize: 8,
+        itemStyle: {
+          color: getRandomColor(datasetKey),
+        },
+        label: {
+          show: true,
+          position: "top",
+          formatter: "{c}",
+          showMinLabel: true,
+          showMaxLabel: true,
+        },
+      };
     });
 
-    chartData.datasets = Array.from(datasetMap.values()).map((dataset) => ({
-      ...dataset,
-      tension: 0.4,
-    }));
-
-    return chartData;
+    return {
+      tooltip: {
+        trigger: "axis",
+        axisPointer: {
+          type: "cross",
+        },
+      },
+      legend: {
+        data: datasetKeys,
+        bottom: 0,
+      },
+      grid: {
+        left: "3%",
+        right: "4%",
+        bottom: "15%",
+        top: "10%",
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        data: dates.map((date) => {
+          const d = new Date(date);
+          return `${d.getMonth() + 1}/${d.getDate()}`;
+        }),
+        boundaryGap: false,
+        axisLabel: {
+          rotate: 30,
+        },
+      },
+      yAxis: {
+        type: "value",
+        min: 0,
+        max: 1,
+        splitLine: {
+          show: true,
+          lineStyle: {
+            type: "dashed",
+          },
+        },
+      },
+      series,
+    };
   };
 
   if (loading) {
@@ -214,47 +196,21 @@ const IdentityEvalChart: React.FC<IdentityEvalChartProps> = () => {
     );
   }
 
-  // 获取所有唯一的模型ID
-  const modelIds = Array.from(
-    new Set(
-      Object.values(evalData).flatMap((results: any) =>
-        results.map((result: any) => result.model_id)
-      )
-    )
-  );
-
   return (
     <Box p={6} borderWidth={1} borderRadius="lg" boxShadow="md">
       <Box mb={6}>
         <Heading size="md">模型评估数据</Heading>
       </Box>
-      {modelIds.map((modelId) => (
+      {Object.keys(modelData).map((modelId) => (
         <Box key={modelId} mb={8}>
           <Heading size="sm" mb={4}>
             {modelId}
           </Heading>
           <Box height="400px">
-            <Line
-              data={processChartData(modelId)}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    position: "bottom" as const,
-                  },
-                  title: {
-                    display: true,
-                    text: `模型 ${modelId} 评估分数趋势`,
-                  },
-                },
-                scales: {
-                  y: {
-                    min: 0,
-                    max: 1,
-                  },
-                },
-              }}
+            <ReactECharts
+              option={getChartOption(modelId)}
+              style={{ height: "100%", width: "100%" }}
+              opts={{ renderer: "svg" }}
             />
           </Box>
         </Box>
