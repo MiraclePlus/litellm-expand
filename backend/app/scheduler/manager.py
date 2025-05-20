@@ -79,7 +79,7 @@ class SchedulerManager:
                 id="llm_connectivity_task",
                 replace_existing=True,
                 hours=1,  # 每小时执行一次
-                next_run_time=datetime.now() + timedelta(seconds=10),
+                # next_run_time=datetime.now() + timedelta(seconds=10),
             )
             logger.info(f"注册定时任务: llm_connectivity_task")
 

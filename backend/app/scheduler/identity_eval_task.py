@@ -91,9 +91,8 @@ def _identity_eval_task_impl(
                 use_cache=f"evalscope/{date.today()}",
             )
 
-            # report = run_task(task_config)
-            # report = report[dataset.dataset_name]
-            report = None
+            report = run_task(task_config)
+            report = report[dataset.dataset_name]
 
             # 创建数据库会话
             with Session(engine) as session:
