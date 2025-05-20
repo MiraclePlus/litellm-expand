@@ -61,9 +61,13 @@ USED_DATASET = {
 CACHE_PATH = "evalscope/"
 TEMPERATURE = 0.0
 
-API_URL = "https://llm-proxy.miracleplus.com/v1" if settings.ENVIRONMENT == "local" else "http://10.128.32.124/v1"
+API_URL = (
+    "https://llm-proxy.miracleplus.com/v1"
+    if settings.ENVIRONMENT == "local"
+    else "http://10.128.32.124/v1"
+)
 API_KEY = "sk-ZY_wnuzes5znMQV31EXRlw"
-    
+
 
 def _identity_eval_task_impl(
     model_name: str,
@@ -74,6 +78,9 @@ def _identity_eval_task_impl(
     """
     for dataset_key, dataset in datasets.items():
         logger.info(f"开始基准测试模型: {model_name}，数据集: {dataset_key}")
+
+        report = None
+
         try:
             task_config = TaskConfig(
                 model=model_name,
@@ -90,61 +97,62 @@ def _identity_eval_task_impl(
                 judge_worker_num=1,  # > 1 could run into deadlock
                 use_cache=f"evalscope/{date.today()}",
             )
-
             report = run_task(task_config)
             report = report[dataset.dataset_name]
-
-            # 创建数据库会话
-            with Session(engine) as session:
-                # 创建新记录
-                new_eval = IdentityEval(
-                    ai_model_id=model_name,
-                    dataset_key=dataset_key,
-                    dataset_name=dataset.dataset_name,
-                    date=date.today(),
-                )
-
-                if report is not None:
-                    new_eval.score = report.metrics[0].score
-                    new_eval.metric = report.metrics[0].name
-                    new_eval.subset = ",".join(report.metrics[0].categories[0].name)
-                    new_eval.num = report.metrics[0].num
-                else:
-                    new_eval.score = -1
-                    new_eval.metric = ""
-                    new_eval.subset = ""
-                    new_eval.num = 0
-
-                # 检查是否已存在相同记录(ai_model_id + dataset_key + date组合唯一)
-                existing = session.exec(
-                    select(IdentityEval).where(
-                        IdentityEval.ai_model_id == model_name,
-                        IdentityEval.dataset_key == dataset_key,
-                        IdentityEval.date == date.today(),
-                    )
-                ).first()
-
-                if existing:
-                    # 更新现有记录
-                    existing.score = new_eval.score
-                    existing.metric = new_eval.metric
-                    existing.dataset_key = dataset_key
-                    existing.subset = new_eval.subset
-                    existing.num = new_eval.num
-                    session.add(existing)
-                    logger.info(f"更新IdentityEval记录: {model_name}/{dataset_key}")
-                else:
-                    # 添加新记录
-                    session.add(new_eval)
-                    logger.info(f"添加新IdentityEval记录: {model_name}/{dataset_key}")
-                # 提交事务
-                session.commit()
+            logger.info(f"基准测试模型: {model_name}，数据集: {dataset_key}，完成")
+            logger.info(f"基准测试结果: {report}")
 
         except Exception as e:
             logger.error(f"{model_name}/{dataset_key} 基准测试任务异常: {str(e)}")
             _send_message_to_feishu(
                 f"Error running task for [{model_name}] on [{dataset_key}]: {e}"
             )
+
+        # 创建数据库会话
+        with Session(engine) as session:
+            # 创建新记录
+            new_eval = IdentityEval(
+                ai_model_id=model_name,
+                dataset_key=dataset_key,
+                dataset_name=dataset.dataset_name,
+                date=date.today(),
+            )
+
+            if report is not None:
+                new_eval.score = report.metrics[0].score
+                new_eval.metric = report.metrics[0].name
+                new_eval.subset = ",".join(report.metrics[0].categories[0].name)
+                new_eval.num = report.metrics[0].num
+            else:
+                new_eval.score = -1
+                new_eval.metric = ""
+                new_eval.subset = ""
+                new_eval.num = 0
+
+            # 检查是否已存在相同记录(ai_model_id + dataset_key + date组合唯一)
+            existing = session.exec(
+                select(IdentityEval).where(
+                    IdentityEval.ai_model_id == model_name,
+                    IdentityEval.dataset_key == dataset_key,
+                    IdentityEval.date == date.today(),
+                )
+            ).first()
+
+            if existing:
+                # 更新现有记录
+                existing.score = new_eval.score
+                existing.metric = new_eval.metric
+                existing.dataset_key = dataset_key
+                existing.subset = new_eval.subset
+                existing.num = new_eval.num
+                session.add(existing)
+                logger.info(f"更新IdentityEval记录: {model_name}/{dataset_key}")
+            else:
+                # 添加新记录
+                session.add(new_eval)
+                logger.info(f"添加新IdentityEval记录: {model_name}/{dataset_key}")
+            # 提交事务
+            session.commit()
 
 
 def _send_message_to_feishu(param):
@@ -182,7 +190,11 @@ def identity_eval_task():
     models = []
     # 创建数据库会话
     with Session(engine) as session:
-        models = session.exec(select(IdentityEvalModel.ai_model_id, IdentityEvalModel.dataset_keys).where(func.cardinality(IdentityEvalModel.dataset_keys) > 0)).all()
+        models = session.exec(
+            select(IdentityEvalModel.ai_model_id, IdentityEvalModel.dataset_keys).where(
+                func.cardinality(IdentityEvalModel.dataset_keys) > 0
+            )
+        ).all()
 
     logger.info(
         f"启动Identity评估数据生成任务，线程数：{num_threads}, 模型：{','.join(map(lambda x: x.ai_model_id, models))}"
