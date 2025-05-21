@@ -32,7 +32,7 @@ const IdentityEvalChart: React.FC<IdentityEvalChartProps> = () => {
   const [modelData, setModelData] = useState<ModelData>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDataset, setSelectedDataset] = useState<string>("all");
+  const [selectedDataset] = useState<string>("all");
 
   // 获取评估数据
   useEffect(() => {
