@@ -67,7 +67,7 @@ class SchedulerManager:
                 id="identity_eval_task",
                 replace_existing=True,
                 max_instances=1,  # 最大实例数
-                hour=0, minute=0,  # 每天 0 点执行
+                hour=0, minute=0, second=0,  # 每天 0 点 0 分 0 秒执行
                 # next_run_time=datetime.now(ZoneInfo('Asia/Shanghai')) + timedelta(seconds=10),
             )
             logger.info(f"注册定时任务: identity_eval_task")

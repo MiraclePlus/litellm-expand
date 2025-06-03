@@ -184,7 +184,7 @@ def identity_eval_task():
     使用多线程同时运行多个_identity_eval_task_impl实例
     """
     # 设置线程数量
-    num_threads = 5
+    num_threads = 4
 
     # 准备数据
     models = []
