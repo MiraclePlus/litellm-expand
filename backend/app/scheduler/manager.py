@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 
 from app.scheduler.identity_eval_task import identity_eval_task
 from app.scheduler.llm_connectivity_task import llm_connectivity_task
+from app.scheduler.user_over_quota_alert_task import user_over_quota_alert_task
 from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
@@ -82,6 +83,16 @@ class SchedulerManager:
                 # next_run_time=datetime.now() + timedelta(seconds=10),
             )
             logger.info(f"注册定时任务: llm_connectivity_task")
+
+            # 注册用户超额预警提醒
+            self._scheduler.add_job(
+                user_over_quota_alert_task,
+                "cron",
+                id="user_over_quota_alert_task",
+                replace_existing=True,
+                hour=0, minute=0, second=0,  # 每天 0 点 0 分 0 秒执行
+                next_run_time=datetime.now() + timedelta(seconds=10),
+            )
 
         # 评测分数基准值差异
         # self._scheduler.add_job(

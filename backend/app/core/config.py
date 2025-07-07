@@ -57,6 +57,12 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
+    LITELLM_SERVER: str
+    LITELLM_PORT: int = 5432
+    LITELLM_USER: str
+    LITELLM_PASSWORD: str = ""
+    LITELLM_DB: str = ""
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
@@ -67,6 +73,18 @@ class Settings(BaseSettings):
             host=self.POSTGRES_SERVER,
             port=self.POSTGRES_PORT,
             path=self.POSTGRES_DB,
+        )
+    
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def LITELLM_DATABASE_URI(self) -> PostgresDsn:
+        return MultiHostUrl.build(
+            scheme="postgresql+psycopg",
+            username=self.LITELLM_USER,
+            password=self.LITELLM_PASSWORD,
+            host=self.LITELLM_SERVER,
+            port=self.LITELLM_PORT,
+            path=self.LITELLM_DB,
         )
 
     SMTP_TLS: bool = True

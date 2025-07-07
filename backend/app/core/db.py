@@ -6,6 +6,7 @@ from app.models import User, UserCreate
 
 engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 
+llm_engine = create_engine(str(settings.LITELLM_DATABASE_URI))
 
 # make sure all SQLModel models are imported (app.models) before initializing DB
 # otherwise, SQLModel might fail to initialize relationships properly
