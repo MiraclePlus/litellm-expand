@@ -91,7 +91,7 @@ class SchedulerManager:
                 id="user_over_quota_alert_task",
                 replace_existing=True,
                 hour=0, minute=0, second=0,  # 每天 0 点 0 分 0 秒执行
-                next_run_time=datetime.now() + timedelta(seconds=10),
+                # next_run_time=datetime.now() + timedelta(seconds=10),
             )
 
         # 评测分数基准值差异
