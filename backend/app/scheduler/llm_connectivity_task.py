@@ -8,7 +8,7 @@ from sqlalchemy import func
 from sqlmodel import Session, select
 from app.core.db import engine
 
-API_URL = "https://llm-proxy.miracleplus.com/v1" if settings.ENVIRONMENT == "local" else "http://10.128.32.124/v1"
+API_URL = "https://llm-proxy.miracleplus.com/v1"
 API_KEY = "sk-GC6dxzp_Ci4sECy8kJDtQQ"
 
 def llm_connectivity_task():

@@ -36,7 +36,7 @@ def create_model(
     session.refresh(model)
     return model
 
-API_URL = "https://llm-proxy.miracleplus.com" if settings.ENVIRONMENT == "local" else "http://10.128.32.124"
+API_URL = "https://llm-proxy.miracleplus.com"
 API_KEY = "sk-ZY_wnuzes5znMQV31EXRlw"
 
 @router.get("/", response_model=List[IdentityEvalModel])
