@@ -11,6 +11,8 @@ services:
       context: ./backend
     volumes:
       - ./evalscope:/app/evalscope
+    environment:
+      - TZ=Asia/Shanghai
   frontend:
     image: frontend
     restart: always
@@ -20,3 +22,5 @@ services:
       context: ./frontend
       args:
         - NODE_ENV=production
+    environment:
+      - TZ=Asia/Shanghai
