@@ -61,7 +61,11 @@ USED_DATASET = {
 CACHE_PATH = "evalscope/"
 TEMPERATURE = 0.0
 
-API_URL = "https://llm-proxy.miracleplus.com/v1"
+API_URL = (
+    "https://llm-proxy.miracleplus.com/v1"
+    if settings.ENVIRONMENT == "local"
+    else "https://llm-proxy.miracleplus.com/v1"
+)
 API_KEY = "sk-ZY_wnuzes5znMQV31EXRlw"
 
 
