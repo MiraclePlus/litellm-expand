@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     LITELLM_PASSWORD: str = ""
     LITELLM_DB: str = ""
 
+    ENABLE_USER_QUOTA_ALERT_TASK: bool = False
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
