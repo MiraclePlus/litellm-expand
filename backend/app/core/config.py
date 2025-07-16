@@ -51,9 +51,9 @@ class Settings(BaseSettings):
 
     PROJECT_NAME: str
     SENTRY_DSN: HttpUrl | None = None
-    POSTGRES_SERVER: str
+    POSTGRES_SERVER: str | None = None
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
+    POSTGRES_USER: str | None = None
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
@@ -63,7 +63,12 @@ class Settings(BaseSettings):
     LITELLM_PASSWORD: str = ""
     LITELLM_DB: str = ""
 
+    # 是否只启用用户超出配额警报任务
     ENABLE_USER_QUOTA_ALERT_TASK: bool = False
+    # 预警使用率
+    USAGE_RATE: int = 90
+    # 飞书消息通知url
+    FEISHU_WEBHOOK_URL: str
 
     @computed_field  # type: ignore[prop-decorator]
     @property

@@ -9,19 +9,20 @@ from json import dumps
 
 def user_over_quota_alert_task():
     logger.info("user_over_quota_alert_task")
+
     # 创建数据库会话
     with Session(llm_engine) as session:
         # 执行SQL查询，查找预算使用率超过90%的用户
 
-        result = session.exec(text("""
+        result = session.exec(text(f"""
             SELECT * FROM "LiteLLM_UserTable" 
-            WHERE max_budget > 0 AND spend / max_budget >= 0.9
+            WHERE max_budget > 0 AND spend / max_budget >= {settings.USAGE_RATE / 100}
         """)).all()
         
         messages = []
         for row in result:
-            logger.info(f"用户 {row.user_email} 预算使用率超过90%: 预算: {row.max_budget}, 已花费: {row.spend}")
-            messages.append(f"🔴用户 {row.user_email} 预算使用率超过90%: 预算: {row.max_budget}, 已花费: {row.spend}")
+            logger.info(f"用户 {row.user_email} 预算使用率超过{settings.USAGE_RATE}%: 预算: {row.max_budget}, 已花费: {row.spend}")
+            messages.append(f"🔴用户 {row.user_email} 预算使用率超过{settings.USAGE_RATE}%: 预算: {row.max_budget}, 已花费: {row.spend}")
 
         if messages:      
             _send_message_to_feishu(f"用户预算使用预警: \r\n{'\r\n'.join(messages)}")
