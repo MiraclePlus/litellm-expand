@@ -40,4 +40,6 @@ COPY ./app /app/app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync
 
+RUN echo "10.120.128.159  llm-proxy.miracleplus.com" >> /etc/hosts
+
 CMD ["fastapi", "run", "--workers", "1", "app/main.py"]
