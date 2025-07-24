@@ -77,6 +77,10 @@ class Settings(BaseSettings):
     EVALUATION_FEISHU_WEBHOOK_URL: str
     # 连通性测试任务飞书消息通知url
     CONNECTIVITY_TEST_FEISHU_WEBHOOK_URL: str
+    # Litellm加密盐
+    LITELLM_SALT_KEY: str | None = None
+    LITE_API_URL: str | None = None
+    LITE_API_KEY: str | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property

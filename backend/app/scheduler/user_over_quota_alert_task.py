@@ -42,9 +42,9 @@ def _send_message_to_feishu(param):
     }
     try:
         webhook_url = (
-            "https://open.feishu.cn/open-apis/bot/v2/hook/52d1469f-1fed-40ee-aa7b-39df5159c945"
+            settings.USAGE_FEISHU_WEBHOOK_URL
             if settings.ENVIRONMENT != "local"
-            else settings.USAGE_FEISHU_WEBHOOK_URL
+            else "https://open.feishu.cn/open-apis/bot/v2/hook/3fb5fbbe-37c0-4788-b6d4-5333f5c0a4d6"
         )
         response = requests.post(webhook_url, headers=headers, data=dumps(data))
         response.raise_for_status()

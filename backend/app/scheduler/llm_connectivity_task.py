@@ -1,15 +1,16 @@
-
+import base64
 from json import dumps
+import time
 from app.core.config import settings
 from app.logger import logger
 from app.models import IdentityEvalModel
 import requests
 from sqlalchemy import func
-from sqlmodel import Session, select
-from app.core.db import engine
-
-API_URL = "https://llm-proxy.miracleplus.com/v1"
-API_KEY = "sk-GC6dxzp_Ci4sECy8kJDtQQ"
+from sqlmodel import Session, select, text
+from app.core.db import engine, llm_engine
+import hashlib
+import nacl.secret
+import nacl.utils
 
 def llm_connectivity_task():
     # 准备数据
@@ -17,40 +18,109 @@ def llm_connectivity_task():
 
     # 创建数据库会话
     with Session(engine) as session:
-        models = session.exec(select(IdentityEvalModel.ai_model_id).where(func.cardinality(IdentityEvalModel.dataset_keys) > 0)).all()
+        models = session.exec(
+            select(IdentityEvalModel.ai_model_id).where(
+                func.cardinality(IdentityEvalModel.dataset_keys) > 0
+            )
+        ).all()
 
-    # 失败的模型
-    failed_models = []
+    # models 过滤出dev开头的
+    models = [model for model in models if model.startswith("dev-")]
+
+    # 失败的模型Map
+    failed_models = {}
+
+    logger.info(f"开始检测模型连通性: {models}")
 
     for model_id in models:
-        logger.info(f"开始检测模型连通性: {model_id}")
         try:
             response = requests.post(
-                f"{API_URL}/chat/completions",
+                f"{settings.LITE_API_URL}/chat/completions",
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": f"Bearer {API_KEY}",
+                    "Authorization": f"Bearer {settings.LITE_API_KEY}",
                 },
                 json={
                     "model": model_id,
-                    "messages": [{"role": "user", "content": "hello"}],
+                    "messages": [{"role": "user", "content": "hi"}],
                 },
             )
             if response.status_code == 200:
                 response_data = response.json()
-                if response_data.get("choices") and response_data["choices"][0].get("message", {}).get("content"):
+                if response_data.get("choices") and response_data["choices"][0].get(
+                    "message", {}
+                ).get("content"):
                     logger.info(f"✅ 模型 {model_id} 连通性检测成功")
                     continue
-                
-            error_message = response.content.decode('utf-8') if response.content else response.status_code
-            failed_models.append(f"❌ 模型 {model_id} 连通性检测失败: {error_message}")
+            error_message = (
+                response.content.decode("utf-8")
+                if response.content
+                else response.status_code
+            )
+            # {'date': 'Thu, 24 Jul 2025 06:24:53 GMT', 'server': 'uvicorn', 'x-litellm-call-id': 'c8a1945d-6616-43cd-a10e-d75a30ecf8a5', 'x-litellm-response-cost': '0', 'x-litellm-key-spend': '0.025460325000000002', 'x-litellm-timeout': '7200', 'content-length': '328', 'content-type': 'application/json'}
             logger.error(f"❌ 模型 {model_id} 连通性检测失败:  {error_message}")
+            failed_models[model_id] = {
+                "message": error_message,
+                "call_id": response.headers.get("x-litellm-call-id"),
+            }
         except Exception as e:
             logger.error(f"❌ 模型 {model_id} 连通性检测失败:  {e}")
-            failed_models.append(f"❌ 模型 {model_id} 连通性检测失败:  {e}")
+            failed_models[model_id] = {
+                "message": e,
+            }
 
     if failed_models:
-        _send_message_to_feishu("\r\n".join(failed_models))
+        # 创建llm数据库会话
+        with Session(llm_engine) as session:
+            # 执行SQL查询，对应模型的服务商
+            for model_id, data in failed_models.items():
+                result = _get_litellm_model_by_request_id(session, data["call_id"])
+
+                failed_models[model_id]["service"] = "unknown"
+
+                if result:
+                    # 先检查没有没配置litellm_credential_name
+                    litellm_params = result.litellm_params
+                    if litellm_params.get("litellm_credential_name"):
+                        failed_models[model_id]["service"] = decrypt_value(
+                            litellm_params.get("litellm_credential_name"),
+                            settings.LITELLM_SALT_KEY,
+                        )
+                    elif litellm_params.get("api_base"):
+                        api_base = decrypt_value(
+                            litellm_params.get("api_base"), settings.LITELLM_SALT_KEY
+                        )
+                        if api_base.startswith("https://aigc.x-see.cn/v1"):
+                            failed_models[model_id]["service"] = "xiaojingai"
+                        elif api_base.startswith("https://www.furion-tech.com/v1"):
+                            failed_models[model_id]["service"] = "jiang"
+                        else:
+                            failed_models[model_id]["service"] = api_base
+                    else:
+                        failed_models[model_id]["service"] = "unknown"
+
+        # 格式化failed_models数据
+        message = ""
+        for model_id, data in failed_models.items():
+            message += f"❌ 模型: [{model_id}], 服务商: [{data['service']}], request_id: [{data['call_id']}], 连通性检测失败: {data['message']}\r\n"
+
+        _send_message_to_feishu(message)
+
+
+def _get_litellm_model_by_request_id(session: Session, request_id: str) -> dict | None:
+    for i in range(3):
+        result = session.exec(
+            text(f"""
+                SELECT p.litellm_params
+                FROM public."LiteLLM_SpendLogs" t inner join public."LiteLLM_ProxyModelTable" p on t.model_id = p.model_id
+                WHERE t.request_id = '{request_id}'
+            """
+        )).first()
+        if result:
+            return result
+        time.sleep(i * 10)
+        logger.info(f"重试获取litellm_params: {i}, call_id: {request_id}")
+    return None
 
 def _send_message_to_feishu(message):
     # Send a message to Feishu
@@ -66,11 +136,27 @@ def _send_message_to_feishu(message):
     }
     try:
         webhook_url = (
-            "https://open.feishu.cn/open-apis/bot/v2/hook/52d1469f-1fed-40ee-aa7b-39df5159c945"
+            settings.CONNECTIVITY_TEST_FEISHU_WEBHOOK_URL
             if settings.ENVIRONMENT != "local"
-            else settings.CONNECTIVITY_TEST_FEISHU_WEBHOOK_URL  # 使用配置中的Webhook URL
+            else "https://open.feishu.cn/open-apis/bot/v2/hook/3fb5fbbe-37c0-4788-b6d4-5333f5c0a4d6"
         )
         response = requests.post(webhook_url, headers=headers, data=dumps(data))
         response.raise_for_status()
     except requests.RequestException as e:
         logger.error(f"发送飞书消息失败: {e}")
+
+
+def decrypt_value(value: bytes, signing_key: str) -> str:
+    value = base64.b64decode(value)
+    # get 32 byte master key #
+    hash_object = hashlib.sha256(signing_key.encode())
+    hash_bytes = hash_object.digest()
+
+    # initialize secret box #
+    box = nacl.secret.SecretBox(hash_bytes)
+
+    # Convert the bytes object to a string
+    plaintext = box.decrypt(value)
+
+    plaintext = plaintext.decode("utf-8")  # type: ignore
+    return plaintext  # type: ignore

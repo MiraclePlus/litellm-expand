@@ -25,6 +25,7 @@ dependencies = [
     "evalscope>=0.15.1",
     "tiktoken>=0.9.0",
     "omegaconf>=2.3.0",
+    "pynacl>=1.5.0",
 ]
 
 [tool.uv]
