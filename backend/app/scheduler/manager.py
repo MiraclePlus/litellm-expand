@@ -61,74 +61,45 @@ class SchedulerManager:
 
     def _register_jobs(self) -> None:
 
-        if settings.ENVIRONMENT != "local":  # 仅在非开发环境下注册任务
+        if settings.ENABLE_USER_QUOTA_ALERT_TASK:
+            # 启用用户超出配额警报任务
+            self._scheduler.add_job(
+                user_over_quota_alert_task,
+                "cron",
+                id="user_over_quota_alert_task",
+                replace_existing=True,
+                hour=0,
+                minute=0,
+                second=0,  # 每天 0 点 0 分 0 秒执行
+                # next_run_time=datetime.now(ZoneInfo('Asia/Shanghai')) + timedelta(seconds=10),
+            )
+            logger.info(f"注册定时任务: user_over_quota_alert_task")
 
-            if settings.ENABLE_USER_QUOTA_ALERT_TASK:
-                # 只启用用户超出配额警报任务
-                self._scheduler.add_job(
-                    user_over_quota_alert_task,
-                    "cron",
-                    id="user_over_quota_alert_task",
-                    replace_existing=True,
-                    hour=0, minute=0, second=0,  # 每天 0 点 0 分 0 秒执行
-                    # next_run_time=datetime.now(ZoneInfo('Asia/Shanghai')) + timedelta(seconds=10),
-                )
-                logger.info(f"注册定时任务: user_over_quota_alert_task")
-            else:
-                self._scheduler.add_job(
-                    identity_eval_task,
-                    "cron",
-                    id="identity_eval_task",
-                    replace_existing=True,
-                    max_instances=1,  # 最大实例数
-                    hour=0, minute=0, second=0,  # 每天 0 点 0 分 0 秒执行
-                    # next_run_time=datetime.now(ZoneInfo('Asia/Shanghai')) + timedelta(seconds=10),
-                )
-                logger.info(f"注册定时任务: identity_eval_task")
+        if settings.ENABLE_EVALUATION_TASK:
+            self._scheduler.add_job(
+                identity_eval_task,
+                "cron",
+                id="identity_eval_task",
+                replace_existing=True,
+                max_instances=1,  # 最大实例数
+                hour=0,
+                minute=0,
+                second=0,  # 每天 0 点 0 分 0 秒执行
+                # next_run_time=datetime.now(ZoneInfo('Asia/Shanghai')) + timedelta(seconds=10),
+            )
+            logger.info(f"注册定时任务: identity_eval_task")
 
-                # 注册LLM连通性检测任务
-                self._scheduler.add_job(
-                    llm_connectivity_task,
-                    "cron",
-                    id="llm_connectivity_task",
-                    replace_existing=True,
-                    hour="*",  # 每小时执行一次
-                    # next_run_time=datetime.now() + timedelta(seconds=10),
-                )
-                logger.info(f"注册定时任务: llm_connectivity_task")
-
-                # 注册用户超额预警提醒
-                self._scheduler.add_job(
-                    user_over_quota_alert_task,
-                    "cron",
-                    id="user_over_quota_alert_task",
-                    replace_existing=True,
-                    hour=0, minute=0, second=0,  # 每天 0 点 0 分 0 秒执行
-                    # next_run_time=datetime.now() + timedelta(seconds=10),
-                )
-
-        # 评测分数基准值差异
-        # self._scheduler.add_job(
-        #     intellectual_fluctuation_task,
-        #     trigger="interval",
-        #     id="intellectual_fluctuation_task",
-        #     replace_existing=True,
-        #     days=1,
-        #     next_run_time=datetime.now() + timedelta(seconds=10),
-        # )
-        # logger.info(f"注册定时任务: intellectual_fluctuation_task")
-
-        # 每5分钟执行一次示例任务
-
-        # self._scheduler.add_job(
-        #     sample_task,
-        #     trigger="interval",
-        #     id="sample_task",
-        #     replace_existing=True,
-        #     seconds=5,  # 每5秒执行一次示例任务
-        # )
-
-        # logger.info(f"注册定时任务: sample_task")
+        if settings.ENABLE_CONNECTIVITY_TEST_TASK:
+            # 注册LLM连通性检测任务
+            self._scheduler.add_job(
+                llm_connectivity_task,
+                "cron",
+                id="llm_connectivity_task",
+                replace_existing=True,
+                hour="*",  # 每小时执行一次
+                # next_run_time=datetime.now() + timedelta(seconds=10),
+            )
+            logger.info(f"注册定时任务: llm_connectivity_task")
 
 
 # 创建定时任务管理器实例

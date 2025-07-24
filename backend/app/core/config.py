@@ -63,12 +63,20 @@ class Settings(BaseSettings):
     LITELLM_PASSWORD: str = ""
     LITELLM_DB: str = ""
 
-    # 是否只启用用户超出配额警报任务
+    # 启用用户超出配额警报任务
     ENABLE_USER_QUOTA_ALERT_TASK: bool = False
+    # 启用评测任务
+    ENABLE_EVALUATION_TASK: bool = False
+    # 启用连通性测试任务
+    ENABLE_CONNECTIVITY_TEST_TASK: bool = False
     # 预警使用率
     USAGE_RATE: int = 90
-    # 飞书消息通知url
-    FEISHU_WEBHOOK_URL: str
+    # 配额警报飞书消息通知url
+    USAGE_FEISHU_WEBHOOK_URL: str
+    # 评测任务飞书消息通知url
+    EVALUATION_FEISHU_WEBHOOK_URL: str
+    # 连通性测试任务飞书消息通知url
+    CONNECTIVITY_TEST_FEISHU_WEBHOOK_URL: str
 
     @computed_field  # type: ignore[prop-decorator]
     @property
