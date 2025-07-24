@@ -1,7 +1,7 @@
 services:
 
   backend:
-    image: backend
+    image: ghcr.io/miracleplus/litellm-expand/backend:latest
     restart: always
     ports:
       - 8000:8000
@@ -14,7 +14,7 @@ services:
     environment:
       - TZ=Asia/Shanghai
   frontend:
-    image: frontend
+    image: ghcr.io/miracleplus/litellm-expand/frontend:latest
     restart: always
     ports:
       - 4000:80
