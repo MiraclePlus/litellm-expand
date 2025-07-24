@@ -24,9 +24,6 @@ def llm_connectivity_task():
             )
         ).all()
 
-    # models 过滤出dev开头的
-    models = [model for model in models if model.startswith("dev-")]
-
     # 失败的模型Map
     failed_models = {}
 
@@ -79,6 +76,7 @@ def llm_connectivity_task():
                 failed_models[model_id]["service"] = "unknown"
 
                 if result:
+                    logger.info(f"获取litellm_params: {result.litellm_params}")
                     # 先检查没有没配置litellm_credential_name
                     litellm_params = result.litellm_params
                     if litellm_params.get("litellm_credential_name"):
@@ -108,7 +106,7 @@ def llm_connectivity_task():
 
 
 def _get_litellm_model_by_request_id(session: Session, request_id: str) -> dict | None:
-    for i in range(3):
+    for i in range(20):
         result = session.exec(
             text(f"""
                 SELECT p.litellm_params
@@ -118,7 +116,7 @@ def _get_litellm_model_by_request_id(session: Session, request_id: str) -> dict 
         )).first()
         if result:
             return result
-        time.sleep(i * 10)
+        time.sleep(i * 5)
         logger.info(f"重试获取litellm_params: {i}, call_id: {request_id}")
     return None
 

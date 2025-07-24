@@ -4,7 +4,7 @@ from app import crud
 from app.core.config import settings
 from app.models import User, UserCreate
 
-engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI)) if settings.ENABLE_USER_QUOTA_ALERT_TASK == False else None
+engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 
 llm_engine = create_engine(str(settings.LITELLM_DATABASE_URI))
 
