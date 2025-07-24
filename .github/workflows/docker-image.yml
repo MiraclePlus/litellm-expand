@@ -47,6 +47,7 @@ jobs:
           context: ./backend
           push: true
           tags: |
-            ${{ github.sha }}, 'latest'
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.meta.outputs.labels }}
           platforms: local,linux/amd64,linux/arm64
