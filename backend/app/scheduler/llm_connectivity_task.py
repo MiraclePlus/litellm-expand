@@ -12,7 +12,56 @@ import hashlib
 import nacl.secret
 import nacl.utils
 
+
 def llm_connectivity_task():
+
+    response = requests.get(
+        f"{settings.LITE_API_URL}/health",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {settings.LITE_API_KEY}",
+        },
+    )
+
+    if response.status_code == 200:
+        logger.info(f"litellm 健康检查请求成功")
+        response_data = response.json()
+
+        unhealthy_endpoints = response_data.get("unhealthy_endpoints")
+        if unhealthy_endpoints:
+            message = ""
+
+            for endpoint in unhealthy_endpoints:
+                model_name = endpoint.get('model')
+                if model_name.startswith("o3-deep-research"):
+                    continue
+                service = "unknown"
+                if endpoint.get("litellm_credential_name"):
+                    service = endpoint["litellm_credential_name"]
+                elif endpoint.get("api_base"):
+                    api_base = endpoint.get("api_base")
+                    if api_base.startswith("https://aigc.x-see.cn/v1"):
+                        service = "xiaojingai"
+                    elif api_base.startswith("https://www.furion-tech.com/v1"):
+                        service = "jiang"
+                    else:
+                        service = api_base
+
+                error_message = endpoint.get('error')
+                # 移除stack trace:之后的内容
+                error_message = error_message.split("stack trace:")[0]
+                message += f"❌ 模型: [{endpoint.get('model')}], 服务商: [{service}], 连通性检测失败: {error_message}\r\n"
+
+            _send_message_to_feishu(message)
+
+        else:
+            logger.info(f"litellm 健康检查通过")
+    else:
+        logger.error(f"litellm 健康检查请求失败: {response.status_code}")
+        _send_message_to_feishu(f"litellm 健康检查请求失败: {response.status_code}")
+
+    return
+
     # 准备数据
     models = []
 
@@ -32,7 +81,7 @@ def llm_connectivity_task():
     for model_id in models:
         try:
             response = requests.post(
-                f"{settings.LITE_API_URL}/chat/completions",
+                f"{settings.LITE_API_URL}/v1/chat/completions",
                 headers={
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {settings.LITE_API_KEY}",
@@ -108,17 +157,20 @@ def llm_connectivity_task():
 def _get_litellm_model_by_request_id(session: Session, request_id: str) -> dict | None:
     for i in range(20):
         result = session.exec(
-            text(f"""
+            text(
+                f"""
                 SELECT p.litellm_params
                 FROM public."LiteLLM_SpendLogs" t inner join public."LiteLLM_ProxyModelTable" p on t.model_id = p.model_id
                 WHERE t.request_id = '{request_id}'
             """
-        )).first()
+            )
+        ).first()
         if result:
             return result
         time.sleep(i * 5)
         logger.info(f"重试获取litellm_params: {i}, call_id: {request_id}")
     return None
+
 
 def _send_message_to_feishu(message):
     # Send a message to Feishu
