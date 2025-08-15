@@ -63,14 +63,10 @@ class Settings(BaseSettings):
     LITELLM_PASSWORD: str = ""
     LITELLM_DB: str = ""
 
-    # 启用用户超出配额警报任务
-    ENABLE_USER_QUOTA_ALERT_TASK: bool = False
     # 启用评测任务
     ENABLE_EVALUATION_TASK: bool = False
     # 启用连通性测试任务
     ENABLE_CONNECTIVITY_TEST_TASK: bool = False
-    # 预警使用率
-    USAGE_RATE: int = 90
     # 配额警报飞书消息通知url
     USAGE_FEISHU_WEBHOOK_URL: str
     # 评测任务飞书消息通知url

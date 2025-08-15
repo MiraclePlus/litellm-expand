@@ -61,20 +61,6 @@ class SchedulerManager:
 
     def _register_jobs(self) -> None:
 
-        if settings.ENABLE_USER_QUOTA_ALERT_TASK:
-            # 启用用户超出配额警报任务
-            self._scheduler.add_job(
-                user_over_quota_alert_task,
-                "cron",
-                id="user_over_quota_alert_task",
-                replace_existing=True,
-                hour=0,
-                minute=0,
-                second=0,  # 每天 0 点 0 分 0 秒执行
-                # next_run_time=datetime.now(ZoneInfo('Asia/Shanghai')) + timedelta(seconds=10),
-            )
-            logger.info(f"注册定时任务: user_over_quota_alert_task")
-
         if settings.ENABLE_EVALUATION_TASK:
             self._scheduler.add_job(
                 identity_eval_task,
