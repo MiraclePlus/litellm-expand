@@ -49,7 +49,8 @@ def llm_connectivity_task():
 
                 error_message = endpoint.get('error')
                 # 移除stack trace:之后的内容
-                error_message = error_message.split("stack trace:")[0]
+                if error_message:
+                    error_message = error_message.split("stack trace:")[0]
                 message += f"❌ 模型: [{endpoint.get('model')}], 服务商: [{service}], 连通性检测失败: {error_message}\r\n"
 
             _send_message_to_feishu(message)

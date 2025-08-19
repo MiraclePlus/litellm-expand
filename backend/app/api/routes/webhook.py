@@ -63,16 +63,25 @@ class WebhookEvent(CallInfo):
 @router.post("/alerting")
 def alerting(event: WebhookEvent):
 
+    logger.info(f"WebhookEvent: {event}")
+
     messages = []
     match event.event:
+        # 每当跟踪客户 ID 的支出时发出。
+        case "spend_tracked":
+            return {"message": "spend_tracked"}
         # 支出已超过预算上限。
         case "budget_crossed":
             messages.append(f"🔴 {event.event_group.value}的支出已超过预算上限.")
         # 支出已超过阈值（当前在达到预算的 85% 和 95% 时发送）
         case "threshold_crossed":
-            messages.append(f"🔴 {event.event_group.value}的支出已超过阈值.")
+            messages.append(f"🔴 {event.event_group.value}的支出已超过阈值或将超出阈值.")
         case _:
             return {"message": "skip"}
+
+    spend = event.spend
+    if spend:
+        messages.append(f"支出: {spend}")
 
     max_budget = event.max_budget
     if max_budget:
@@ -108,7 +117,7 @@ def alerting(event: WebhookEvent):
 
     event_message = event.event_message
     if event_message:
-        messages.append(f"预警信息: {event_message}".replace("\n", ""))
+        messages.append(f"预警信息[{event.event}]: {event_message}".replace("\n", ""))
 
     if messages:
         _send_message_to_feishu("\n".join(messages))
