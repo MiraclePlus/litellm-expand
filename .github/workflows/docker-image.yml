@@ -1,9 +1,9 @@
 name: Backend Build and Push
 
 on:
-  push:
-    branches:
-      - dev
+#  push:
+#    branches:
+#      - dev
   # 允许手动启用 workflow 的配置
   workflow_dispatch:
 env:
