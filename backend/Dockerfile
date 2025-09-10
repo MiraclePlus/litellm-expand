@@ -1,4 +1,4 @@
-FROM python:3.12
+FROM python:3.10
 
 ENV PYTHONUNBUFFERED=1
 
@@ -39,12 +39,5 @@ COPY ./app /app/app
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync
-
-# 创建入口脚本
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# 设置入口点
-ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["fastapi", "run", "--workers", "1", "app/main.py"]
