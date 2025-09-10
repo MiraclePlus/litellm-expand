@@ -12,7 +12,8 @@ from app.logger import logger
 
 def llm_connectivity_task():
     models = ["gpt-5", "o4-mini", "claude-sonnet-4-20250514", "gala-claude-sonnet-4-20250514", "gemini-2.5-pro"]
-    message = ""
+    logger.info(f"begin llm_connectivity_task: {models}")
+    messages = []
     for model in models:
         response = requests.get(
             f"{settings.LITE_API_URL}/health?model={model}",
@@ -23,7 +24,6 @@ def llm_connectivity_task():
         )
 
         if response.status_code == 200:
-            logger.info(f"litellm 健康检查请求成功")
             response_data = response.json()
 
             unhealthy_endpoints = response_data.get("unhealthy_endpoints")
@@ -49,16 +49,19 @@ def llm_connectivity_task():
                     # 移除stack trace:之后的内容
                     if error_message:
                         error_message = error_message.split("stack trace:")[0]
-                    message += f"❌ 模型: [{endpoint.get('model')}], 服务商: [{service}], 连通性检测失败: {error_message}\r\n"
+                    text = f"❌ 模型: [{endpoint.get('model')}], 服务商: [{service}], 连通性检测失败: {error_message}"
+                    messages.append(text)
+                    logger.info(text)
 
             else:
-                logger.info(f"litellm 健康检查通过")
+                logger.info(f"{model} 健康检查通过")
         else:
             logger.error(f"litellm 健康检查请求失败: {response.status_code}")
-            message += f"❌ 模型: [{model}], litellm 健康检查请求失败: {response.status_code}\r\n"
+            messages.append(f"❌ 模型: [{model}], litellm 健康检查请求失败: {response.status_code}")
 
-    if message:
-        _send_message_to_feishu(message)
+    if messages:
+        _send_message_to_feishu("\r\n".join(messages))
+    logger.info("end llm_connectivity_task")
 
 
 def _send_message_to_feishu(message):

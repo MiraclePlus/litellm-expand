@@ -1,7 +1,7 @@
 import { Box, Button, Flex, Heading, Spinner, Text } from "@chakra-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { FiPause, FiPlay } from "react-icons/fi"
+import { FiPause, FiPlay, FiZap } from "react-icons/fi"
 
 import { SchedulerService } from "@/client"
 import type { JobInfo } from "@/client/types.gen"
@@ -52,6 +52,19 @@ function SchedulerPage() {
     },
   })
 
+  // 立即运行任务的mutation
+  const runJobMutation = useMutation({
+    mutationFn: (jobId: string) => SchedulerService.runJobNow({ jobId }),
+    onSuccess: () => {
+      showSuccessToast("任务已立即运行")
+      // 刷新任务列表
+      queryClient.invalidateQueries({ queryKey: ["scheduler", "jobs"] })
+    },
+    onError: (error) => {
+      showErrorToast(`立即运行任务失败: ${String(error)}`)
+    },
+  })
+
   // 处理暂停或恢复任务
   const handleToggleJob = (job: JobInfo) => {
     // 通过判断下次执行时间是否存在来确定任务是暂停还是运行状态
@@ -62,6 +75,11 @@ function SchedulerPage() {
     } else {
       pauseJobMutation.mutate(job.id)
     }
+  }
+
+  // 处理立即运行任务
+  const handleRunJobNow = (job: JobInfo) => {
+    runJobMutation.mutate(job.id)
   }
 
   // 获取触发器类型的中文名称
@@ -134,24 +152,34 @@ function SchedulerPage() {
             <Box key={job.id} mb={4} p={4} borderWidth="1px" borderRadius="md">
               <Flex pb={2} justify="space-between" align="center">
                 <Heading size="md">{job.name}</Heading>
-                <Button
-                  colorScheme={isPaused ? "green" : "orange"}
-                  size="sm"
-                  onClick={() => handleToggleJob(job)}
-                  loading={
-                    pauseJobMutation.isPending || resumeJobMutation.isPending
-                  }
-                >
-                  {isPaused ? (
-                    <>
-                      <FiPlay style={{ marginRight: "0.5rem" }} /> 恢复
-                    </>
-                  ) : (
-                    <>
-                      <FiPause style={{ marginRight: "0.5rem" }} /> 暂停
-                    </>
-                  )}
-                </Button>
+                <Flex gap={2}>
+                  <Button
+                    colorScheme="blue"
+                    size="sm"
+                    onClick={() => handleRunJobNow(job)}
+                    loading={runJobMutation.isPending}
+                  >
+                    <FiZap style={{ marginRight: "0.5rem" }} /> 立即运行
+                  </Button>
+                  <Button
+                    colorScheme={isPaused ? "green" : "orange"}
+                    size="sm"
+                    onClick={() => handleToggleJob(job)}
+                    loading={
+                      pauseJobMutation.isPending || resumeJobMutation.isPending
+                    }
+                  >
+                    {isPaused ? (
+                      <>
+                        <FiPlay style={{ marginRight: "0.5rem" }} /> 恢复
+                      </>
+                    ) : (
+                      <>
+                        <FiPause style={{ marginRight: "0.5rem" }} /> 暂停
+                      </>
+                    )}
+                  </Button>
+                </Flex>
               </Flex>
               <Box>
                 <Text mb={2}>
