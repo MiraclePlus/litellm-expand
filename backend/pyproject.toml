@@ -38,6 +38,16 @@ dev-dependencies = [
     "coverage<8.0.0,>=7.4.3",
 ]
 
+[[tool.uv.index]]
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+default = true  # 设为默认索引，优先使用
+
+[[tool.uv.index]]
+name = "tsinghua"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
