@@ -1,10 +1,12 @@
 import enum
 from json import dumps
 from typing import Literal, Optional
-from fastapi import APIRouter, Request, logger
+
 import requests
-from sqlmodel import Field
+from fastapi import APIRouter
 from pydantic import BaseModel
+from sqlmodel import Field
+from app.logger import logger
 from app.core.config import settings
 
 router = APIRouter(prefix="/webhook", tags=["webhook"])
